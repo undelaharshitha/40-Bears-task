@@ -1,0 +1,88 @@
+
+1.Save the script to a file, for example, system_health_monitor.sh.
+
+2.Make the Script Executable:
+chmod +x system_health_monitor.sh
+1.Start Monitoring:
+./system_health_monitor.sh start
+2.Stop Monitoring:
+./system_health_monitor.sh stop
+3.Check Monitoring Status:
+./system_health_monitor.sh status
+
+
+Explanation of the Script
+Configuration:
+
+LOG_FILE: The file where system health logs will be stored.
+INTERVAL: Time interval (in seconds) between each health check.
+CPU_THRESHOLD, MEMORY_THRESHOLD, DISK_THRESHOLD: Threshold values for CPU, memory, and disk usage.
+PING_TARGET: The target to check network connectivity (Google's public DNS server).
+PING_COUNT: The number of ping attempts to check network connectivity.
+Functions:
+
+start_monitoring(): Starts the monitoring process in the background and saves its PID to a file.
+stop_monitoring(): Stops the monitoring process using the PID saved in the file.
+check_status(): Checks if the monitoring process is running by checking the PID file.
+check_system_health(): Collects system metrics, generates warnings if thresholds are exceeded, and logs the results.
+
+Code explanation:
+1. Configuration:
+LOG_FILE: The file where the system health status will be logged.
+INTERVAL: Time interval (in seconds) between each health check.
+CPU_THRESHOLD: CPU usage percentage threshold. If CPU usage exceeds this value, a warning is generated.
+MEMORY_THRESHOLD: Memory usage percentage threshold. If memory usage exceeds this value, a warning is generated.
+DISK_THRESHOLD: Disk usage percentage threshold. If disk usage exceeds this value, a warning is generated.
+PING_TARGET: The IP address used to check network connectivity (Google's public DNS server in this case).
+PING_COUNT: Number of ping attempts to check network connectivity.
+
+
+2.Start Monitoring Function
+start_monitoring(): A function to start the system health monitoring process.
+nohup bash -c "while true; do check_system_health; sleep $INTERVAL; done" &> /dev/null &: Starts a background process that continuously runs the check_system_health function at intervals specified by INTERVAL. nohup ensures the process continues running even if the terminal is closed.
+echo $! > /var/run/system_health_monitor.pid: Saves the process ID (PID) of the background process to a file (/var/run/system_health_monitor.pid), so it can be managed later (stopped or checked).
+
+
+3.Stop Monitoring Function
+stop_monitoring(): A function to stop the system health monitoring process.
+if [ -f /var/run/system_health_monitor.pid ]; then: Checks if the PID file exists.
+kill $(cat /var/run/system_health_monitor.pid): Kills the process whose PID is stored in the PID file.
+rm /var/run/system_health_monitor.pid: Removes the PID file.
+else: If the PID file does not exist, it indicates that the monitoring process is not running.
+
+
+4. Check Status Function
+check_status(): A function to check if the system health monitoring process is running.
+if [ -f /var/run/system_health_monitor.pid ]; then: Checks if the PID file exists.
+echo "System health monitoring is running with PID: $(cat /var/run/system_health_monitor.pid)": If the PID file exists, it prints that the monitoring process is running along with its PID.
+else: If the PID file does not exist, it indicates that the monitoring process is not running.
+5.Check System Health Function
+
+
+check_system_health(): A function that checks various system metrics and logs the results.
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S'): Gets the current timestamp.
+CPU Usage:
+CPU_USAGE=$(top -bn1 | grep "Cpu(s)" | awk '{print $2 + $4}'): Uses top to get the CPU usage and extracts the percentage of CPU usage by user and system processes.
+if (( $(echo "$CPU_USAGE > $CPU_THRESHOLD" | bc -l) )); then: Checks if CPU usage exceeds the threshold.
+CPU_WARNING="WARNING: High CPU usage: $CPU_USAGE%": Generates a warning if the threshold is exceeded.
+Memory Usage:
+MEMORY_USAGE=$(free | grep Mem | awk '{print $3/$2 * 100.0}'): Uses free to get memory usage as a percentage.
+Similar logic for checking and generating warnings as CPU usage.
+Disk Usage:
+DISK_USAGE=$(df / | grep / | awk '{ print $5}' | sed 's/%//g'): Uses df to get the disk usage percentage for the root filesystem.
+Similar logic for checking and generating warnings as CPU usage.
+Network Connectivity:
+NETWORK_STATUS=$(ping -c $PING_COUNT $PING_TARGET > /dev/null 2>&1 && echo "Online" || echo "Offline"): Uses ping to check network connectivity.
+if [ "$NETWORK_STATUS" == "Offline" ]; then: Generates a warning if the network is offline.
+Logging:
+Logs the system health status to LOG_FILE.
+Logs any warnings if thresholds are exceeded.
+
+
+6. Main Script Logic:
+Uses a case statement to handle the command-line arguments.
+start: Calls start_monitoring() to start the monitoring process.
+stop: Calls stop_monitoring() to stop the monitoring process.
+status: Calls check_status() to check if the monitoring process is running.
+*: Prints usage information if an invalid argument is provided.
+
