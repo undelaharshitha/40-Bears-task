@@ -1,0 +1,31 @@
+Documentation:
+Client Program (client.c)
+Socket Creation: Creates a TCP socket using socket().
+Server Address Setup: Sets up the server address using inet_pton() to convert the IP address.
+Connecting to Server: Connects to the server using connect().
+Sending Message: Reads a message from the user and sends it to the server.
+Receiving Echo: Receives the echoed message from the server and displays it.
+Error Handling: Checks and handles errors at each step (socket creation, address conversion, connection, reading, and writing).
+Detailed Explanation:
+1.These headers include necessary functions and definitions for creating and managing sockets, handling input/output, and working with network addresses.
+2.PORT: The port number on which the server is listening.
+3.BUFFER_SIZE: Defines the size of the buffer used for sending and receiving messages.
+4.client_socket: A file descriptor for the client's socket.
+5.server_addr: A structure to store the server's address.
+6.buffer: A character array to store the message sent to and received from the server.
+7.socket(AF_INET, SOCK_STREAM, 0): Creates a TCP socket using IPv4.
+If the socket creation fails, socket() returns a value less than 0, and perror prints an error message. The program then exits with a failure status.
+8.server_addr.sin_family = AF_INET: Sets the address family to IPv4.
+server_addr.sin_port = htons(PORT): Converts the port number to network byte order (big-endian).
+9.inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr): Converts the IP address from its text representation to its binary form and stores it in server_addr.sin_addr.
+If the conversion fails, inet_pton() returns a value less than or equal to 0. The program prints an error message, closes the socket, and exits with a failure status.
+10.connect(client_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)): Connects the client socket to the server address specified.
+If the connection fails, connect() returns a value less than 0. The program prints an error message, closes the socket, and exits with a failure status.
+11.Prompts the user to enter a message.
+fgets(buffer, BUFFER_SIZE, stdin): Reads the user input and stores it in buffer.
+send(client_socket, buffer, strlen(buffer), 0): Sends the message stored in buffer to the server.
+12.int bytes_received = read(client_socket, buffer, BUFFER_SIZE): Reads the echoed message from the server into buffer.
+If read() returns a value less than 0, an error occurred during reading, and an error message is printed.
+Otherwise, the received data is null-terminated, and the echoed message is printed.
+13.close(client_socket): Closes the client socket.
+return 0: Exits the program with a success status
